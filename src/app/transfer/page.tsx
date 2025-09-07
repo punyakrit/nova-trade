@@ -10,7 +10,7 @@ import axios from 'axios';
 const RPC_ENDPOINT = `https://devnet.helius-rpc.com/?api-key=${process.env.NEXT_PUBLIC_HELIUS_API_KEY}`;
 
 export default function TransferPage() {
-  const { publicKey, sendTransaction, connected, disconnect } = useWallet();
+  const { publicKey, sendTransaction, connected } = useWallet();
   const [amount, setAmount] = useState('');
   const [recipient, setRecipient] = useState('');
   const [showUSD, setShowUSD] = useState(false);
@@ -23,11 +23,9 @@ export default function TransferPage() {
   useEffect(() => {
     setMounted(true);
     fetchSolPrice();
-    // Initialize connection
     setConnection(new Connection(RPC_ENDPOINT, 'confirmed'));
   }, []);
 
-  // Refresh connection when wallet connects/disconnects
   useEffect(() => {
     if (connected && publicKey) {
       setConnection(new Connection(RPC_ENDPOINT, 'confirmed'));
@@ -96,7 +94,7 @@ export default function TransferPage() {
     }
 
     if (isLoading) {
-      return; // Prevent multiple simultaneous transactions
+      return; 
     }
 
     setIsLoading(true);
@@ -109,14 +107,12 @@ export default function TransferPage() {
       const recipientPubkey = new PublicKey(recipient);
       const amountInLamports = Math.floor(parseFloat(amount) * LAMPORTS_PER_SOL);
 
-      // Check if user has enough balance
       const balance = await connection.getBalance(publicKey);
       if (balance < amountInLamports) {
         toast.error('Insufficient balance');
         return;
       }
 
-      // Get fresh blockhash for each transaction
       const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash('confirmed');
       
       const transaction = new Transaction({
@@ -132,14 +128,12 @@ export default function TransferPage() {
         })
       );
 
-      // Send transaction with proper options
       const signature = await sendTransaction(transaction, connection, {
         skipPreflight: false,
         preflightCommitment: 'confirmed',
         maxRetries: 3,
       });
       
-      // Wait for confirmation with proper timeout
       const confirmation = await connection.confirmTransaction({
         signature,
         blockhash,
@@ -152,7 +146,6 @@ export default function TransferPage() {
       
       toast.success(`Transaction sent successfully! Signature: ${signature.slice(0, 8)}...`);
       
-      // Clear form after successful transaction
       setAmount('');
       setRecipient('');
       setErrors({});
@@ -174,14 +167,6 @@ export default function TransferPage() {
         errorMessage = 'Transaction expired, please try again';
       } else if (errorMessageStr.includes('429')) {
         errorMessage = 'Too many requests, please wait and try again';
-      } else if (errorMessageStr.includes('Unexpected error') || errorMessageStr.includes('StandardWalletAdapter')) {
-        errorMessage = 'Wallet connection issue. Please try disconnecting and reconnecting your wallet.';
-        // Suggest wallet reconnection
-        setTimeout(() => {
-          if (confirm('Would you like to disconnect and reconnect your wallet to fix this issue?')) {
-            disconnect();
-          }
-        }, 2000);
       } else if (errorMessageStr) {
         errorMessage = `Transfer failed: ${errorMessageStr}`;
       }
