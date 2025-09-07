@@ -157,22 +157,24 @@ export default function TransferPage() {
       setRecipient('');
       setErrors({});
       
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Transfer failed:', error);
       
       let errorMessage = 'Transfer failed';
       
-      if (error.message.includes('User rejected') || error.message.includes('User declined')) {
+      const errorMessageStr = error instanceof Error ? error.message : String(error);
+      
+      if (errorMessageStr.includes('User rejected') || errorMessageStr.includes('User declined')) {
         errorMessage = 'Transaction cancelled by user';
-      } else if (error.message.includes('Insufficient')) {
+      } else if (errorMessageStr.includes('Insufficient')) {
         errorMessage = 'Insufficient balance';
-      } else if (error.message.includes('Invalid')) {
+      } else if (errorMessageStr.includes('Invalid')) {
         errorMessage = 'Invalid transaction parameters';
-      } else if (error.message.includes('Blockhash not found')) {
+      } else if (errorMessageStr.includes('Blockhash not found')) {
         errorMessage = 'Transaction expired, please try again';
-      } else if (error.message.includes('429')) {
+      } else if (errorMessageStr.includes('429')) {
         errorMessage = 'Too many requests, please wait and try again';
-      } else if (error.message.includes('Unexpected error') || error.message.includes('StandardWalletAdapter')) {
+      } else if (errorMessageStr.includes('Unexpected error') || errorMessageStr.includes('StandardWalletAdapter')) {
         errorMessage = 'Wallet connection issue. Please try disconnecting and reconnecting your wallet.';
         // Suggest wallet reconnection
         setTimeout(() => {
@@ -180,8 +182,8 @@ export default function TransferPage() {
             disconnect();
           }
         }, 2000);
-      } else if (error.message) {
-        errorMessage = `Transfer failed: ${error.message}`;
+      } else if (errorMessageStr) {
+        errorMessage = `Transfer failed: ${errorMessageStr}`;
       }
       
       toast.error(errorMessage);
