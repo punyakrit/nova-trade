@@ -3,9 +3,15 @@
 import Link from 'next/link';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
+import { useState, useEffect } from 'react';
 
 export default function Navigation() {
   const { connected } = useWallet();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   return (
     <nav className="glass-effect border-b border-white/10 sticky top-0 z-50">
@@ -34,7 +40,7 @@ export default function Navigation() {
           </div>
           
           <div className="flex items-center space-x-4">
-            {connected && (
+            {mounted && connected && (
               <div className="hidden sm:flex items-center space-x-2 px-3 py-1.5 bg-green-500/20 border border-green-500/30 rounded-full">
                 <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
                 <span className="text-sm text-green-400 font-medium">
@@ -42,9 +48,14 @@ export default function Navigation() {
                 </span>
               </div>
             )}
-            <div className="wallet-adapter-button-trigger">
-              <WalletMultiButton className="!bg-gradient-to-r !from-purple-600 !to-violet-600 !border-0 !rounded-xl !px-6 !py-3 !font-semibold !text-white hover:!shadow-lg hover:!shadow-purple-500/25 transition-all duration-300" />
-            </div>
+            {mounted && (
+              <div className="wallet-adapter-button-trigger">
+                <WalletMultiButton className="!bg-gradient-to-r !from-purple-600 !to-violet-600 !border-0 !rounded-xl !px-6 !py-3 !font-semibold !text-white hover:!shadow-lg hover:!shadow-purple-500/25 transition-all duration-300" />
+              </div>
+            )}
+            {!mounted && (
+              <div className="w-32 h-12 bg-white/10 rounded-xl animate-pulse"></div>
+            )}
           </div>
         </div>
       </div>
