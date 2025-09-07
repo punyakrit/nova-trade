@@ -68,13 +68,29 @@ export default function CosmoPage() {
   const connectWebSocket = () => {
     try {
       setConnectionStatus('Connecting...');
-      const ws = new WebSocket('ws://55075d1c6d53.ngrok-free.app/connect');
+      
+      const getWebSocketUrl = () => {
+        const wsUrl = process.env.NEXT_PUBLIC_WS_URL || 'ws://55075d1c6d53.ngrok-free.app/connect';
+        
+        if (typeof window !== 'undefined') {
+          const isHttps = window.location.protocol === 'https:';
+          if (isHttps && wsUrl.startsWith('ws://')) {
+            return wsUrl.replace('ws://', 'wss://');
+          }
+        }
+        
+        return wsUrl;
+      };
+      
+      const wsUrl = getWebSocketUrl();
+      console.log('Attempting to connect to WebSocket:', wsUrl);
+      const ws = new WebSocket(wsUrl);
       wsRef.current = ws;
 
       ws.onopen = () => {
         setIsConnected(true);
         setConnectionStatus('Connected');
-        console.log('WebSocket connected');
+        console.log('WebSocket connected to:', wsUrl);
       };
 
       ws.onmessage = async (event) => {
@@ -121,7 +137,8 @@ export default function CosmoPage() {
 
       ws.onerror = (error) => {
         console.error('WebSocket error:', error);
-        setConnectionStatus('Error');
+        setConnectionStatus('Connection Error');
+        setIsConnected(false);
       };
     } catch (error) {
       console.error('Failed to connect to WebSocket:', error);
